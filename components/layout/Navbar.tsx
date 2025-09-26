@@ -270,7 +270,7 @@ export default function Navbar({ className, onMenuClick, user: propUser }: Navba
               <div className="border-t border-white/10 p-4">
                 <div className="flex items-center">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                    
                     <AvatarFallback className="bg-gradient-to-r from-blue-400 to-cyan-300 text-white">
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
@@ -297,3 +297,4 @@ export default function Navbar({ className, onMenuClick, user: propUser }: Navba
     </header>
   );
 }
+  
