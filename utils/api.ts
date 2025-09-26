@@ -20,6 +20,21 @@ const API = axios.create({
   },
   timeout: 10000, 
 });
+// Add response interceptor for better error handling
+API.interceptors.response.use(
+  (response) => response,
+  (error: AxiosErrorWithResponse) => {
+    if (error.response?.status === 403) {
+      // Token might be invalid or expired
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        window.location.href = '/auth/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 API.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
