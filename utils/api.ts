@@ -22,69 +22,60 @@ const API = axios.create({
 });
 API.interceptors.request.use(
   (config) => {
+    // Only run on client-side
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          config.headers = config.headers || {};
+          // Ensure we don't send empty or invalid tokens
+          if (token.trim() !== '') {
+            config.headers.Authorization = `Bearer ${token}`;
+          } else {
+            console.warn('Empty token found in localStorage');
+          }
+        } else {
+          console.warn('No token found in localStorage');
+        }
+      } catch (error) {
+        console.error('Error accessing localStorage:', error);
       }
     }
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 API.interceptors.response.use(
-  (response: AxiosResponse) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('API Response:', {
-        url: response.config.url,
-        status: response.status,
-        data: response.data
-      });
-    }
-    return response;
-  },
+  (response: AxiosResponse) => response,
   (error: AxiosErrorWithResponse) => {
-    // Log detailed error information
-    console.error('API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      response: error.response?.data,
-      headers: error.config?.headers,
-    });
-
     if (error.code === 'ECONNABORTED') {
       error.message = 'Request timeout. Please check your internet connection.';
     } else if (!error.response) {
       error.message = 'Network Error: Unable to connect to the server';
     } else if (error.response.status === 401) {
-      // Handle unauthorized
+      // Handle unauthorized (token expired or invalid)
       const responseData = error.response.data as ErrorResponse;
       const serverMessage = responseData?.message || responseData?.error;
-      error.message = serverMessage || 'Session expired. Please log in again.';
+      error.message = serverMessage || 'Your session has expired. Please log in again.';
       
-      // Clear token and redirect to login
+      // Clear invalid token and redirect to login
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         window.location.href = '/auth/login';
       }
     } else if (error.response.status === 403) {
-      // Handle forbidden
+      // Handle forbidden (no permission)
       const responseData = error.response.data as ErrorResponse;
       const serverMessage = responseData?.message || responseData?.error;
       error.message = serverMessage || 'You do not have permission to access this resource.';
       
-      // Log more details about the 403 error
-      console.error('Access Forbidden:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-        token: error.config?.headers?.Authorization ? 'Token exists' : 'No token',
-      });
+      // Optionally redirect to dashboard or home if needed
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('dashboard')) {
+        window.location.href = '/dashboard';
+      }
     } else if (error.response.data) {
       const responseData = error.response.data as ErrorResponse;
       const serverMessage = responseData?.message || responseData?.error;
