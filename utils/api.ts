@@ -1,1 +1,67 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, AxiosRequestHeaders } from "axios";type ErrorResponse = {  message?: string;  error?: string;  [key: string]: any; };type AxiosErrorWithResponse = AxiosError & {  response?: AxiosResponse<ErrorResponse>;  config?: {    url?: string;    method?: string;    headers?: AxiosRequestHeaders;  };};const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';const API = axios.create({  baseURL: API_BASE_URL,  headers: {    'Content-Type': 'application/json',  },  timeout: 10000, });API.interceptors.request.use(  (config) => {    if (typeof window !== 'undefined') {      const token = localStorage.getItem("token");      if (token) {        config.headers = config.headers || {};        config.headers.Authorization = `Bearer ${token}`;      }    }    return config;  },  (error) => {    return Promise.reject(error);  });API.interceptors.response.use(  (response: AxiosResponse) => response,  (error: AxiosErrorWithResponse) => {    if (error.code === 'ECONNABORTED') {      error.message = 'Request timeout. Please check your internet connection.';    } else if (!error.response) {      error.message = 'Network Error: Unable to connect to the server';    } else if (error.response.status === 401) {      const responseData = error.response.data as ErrorResponse;      const serverMessage = responseData?.message || responseData?.error;      error.message = serverMessage || 'Invalid credentials. Please try again.';    } else if (error.response.data) {      const responseData = error.response.data as ErrorResponse;      const serverMessage = responseData?.message || responseData?.error;      if (serverMessage) {        error.message = serverMessage;      }    }    if (process.env.NODE_ENV !== 'production') {      console.error('API Error:', {        status: error.response?.status,        message: error.message,        url: error.config?.url,        method: error.config?.method,      });    }    return Promise.reject(error);  });export default API;
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, AxiosRequestHeaders } from "axios";
+type ErrorResponse = {
+  message?: string;
+  error?: string;
+  [key: string]: any; 
+};
+type AxiosErrorWithResponse = AxiosError & {
+  response?: AxiosResponse<ErrorResponse>;
+  config?: {
+    url?: string;
+    method?: string;
+    headers?: AxiosRequestHeaders;
+  };
+};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000, 
+});
+API.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+API.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: AxiosErrorWithResponse) => {
+    if (error.code === 'ECONNABORTED') {
+      error.message = 'Request timeout. Please check your internet connection.';
+    } else if (!error.response) {
+      error.message = 'Network Error: Unable to connect to the server';
+    } else if (error.response.status === 401) {
+      const responseData = error.response.data as ErrorResponse;
+      const serverMessage = responseData?.message || responseData?.error;
+      error.message = serverMessage || 'Invalid credentials. Please try again.';
+    } else if (error.response.data) {
+      const responseData = error.response.data as ErrorResponse;
+      const serverMessage = responseData?.message || responseData?.error;
+      if (serverMessage) {
+        error.message = serverMessage;
+      }
+    }
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('API Error:', {
+        status: error.response?.status,
+        message: error.message,
+        url: error.config?.url,
+        method: error.config?.method,
+      });
+    }
+    return Promise.reject(error);
+  }
+);
+export default API;
