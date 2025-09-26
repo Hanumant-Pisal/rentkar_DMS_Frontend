@@ -5,38 +5,18 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Package,
-  User,
   Users,
-  Settings,
-  Truck,
-  LogOut,
-  Clock,
-  CheckCircle,
-  AlertCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { signOut as authSignOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 type Role = 'admin' | 'partner';
+
 interface SidebarProps {
   onLinkClick?: () => void;
   role?: Role;
 }
+
 export function Sidebar({ onLinkClick, role = 'admin' }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const handleSignOut = async () => {
-    try {
-      await authSignOut({ 
-        redirect: false,
-        callbackUrl: "/auth/login"
-      });
-      router.push("/auth/login");
-      router.refresh();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  
   const adminNavItems = [
     {
       name: "Dashboard",

@@ -5,7 +5,6 @@ export interface User {
   email: string;
   role: UserRole;
   phone?: string;
-  vehicleNumber?: string;
   isAvailable?: boolean;
   location?: {
     type: 'Point';

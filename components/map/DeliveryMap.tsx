@@ -184,8 +184,8 @@ const DeliveryMap = ({
 }: Props) => {
   const mapRef = useRef<L.Map | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const defaultCenter: [number, number] = [12.9716, 77.5946];
   const center = useMemo(() => {
+    const defaultCenter: [number, number] = [12.9716, 77.5946];
     if (initialLocation) return [initialLocation.lat, initialLocation.lng];
     if (fromLocation) return [fromLocation.lat, fromLocation.lng];
     if (toLocation) return [toLocation.lat, toLocation.lng];

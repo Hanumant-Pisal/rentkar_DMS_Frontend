@@ -3,21 +3,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { cn } from "@/lib/utils";
 import { 
   Menu, 
-  X, 
+  X,
+  Package,
+  LayoutDashboard,
+  User as UserIcon,
+  Settings,
   ChevronDown,
-  User as UserIcon, 
-  LogOut, 
-  Settings, 
-  LayoutDashboard, 
-  Truck,
-  Package
+  LogOut as LogOutIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getUser } from "@/utils/auth";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,19 +40,25 @@ interface NavbarProps {
     role?: 'admin' | 'partner';
   };
 }
+
 export default function Navbar({ className, onMenuClick, user: propUser }: NavbarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState(propUser);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState(propUser);
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
+  const isAdmin = pathname?.startsWith('/admin') ?? false;
+  
   useEffect(() => {
-    if (!user) {
-      const storedUser = getUser();
-      if (storedUser) {
-        setUser(storedUser);
+    const loadUser = async () => {
+      if (!currentUser) {
+        const storedUser = getUser();
+        if (storedUser) {
+          setCurrentUser(storedUser);
+        }
       }
-    }
-  }, [user]);
+    };
+    
+    loadUser();
+  }, [currentUser]);
   const adminNavigation: NavItem[] = [
     { 
       name: 'Dashboard', 
@@ -102,6 +107,8 @@ export default function Navbar({ className, onMenuClick, user: propUser }: Navba
     },
   ];
   const navigation = isAdmin ? adminNavigation : partnerNavigation;
+  const user = currentUser || propUser; // Use the most up-to-date user object
+  
   const toggleMobileMenu = () => {
     setIsOpen(!isOpen);
     onMenuClick?.();
@@ -200,7 +207,7 @@ export default function Navbar({ className, onMenuClick, user: propUser }: Navba
                 className="text-red-400 focus:bg-red-500/10 focus:text-red-400 cursor-pointer"
                 onClick={handleSignOut}
               >
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOutIcon className="mr-2 h-4 w-4" />
                 <span>Sign out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -264,7 +271,7 @@ export default function Navbar({ className, onMenuClick, user: propUser }: Navba
                     onClick={handleSignOut}
                     className="flex w-full items-center justify-center rounded-md bg-red-500/10 px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20"
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOutIcon className="mr-2 h-4 w-4" />
                     Sign out
                   </button>
                 </div>

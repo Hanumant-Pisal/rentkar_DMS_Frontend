@@ -38,14 +38,6 @@ const PartnerCard = ({ partner, onClick }: Props) => {
             <span>{partner.phone}</span>
           </div>
         )}
-        
-        {partner.vehicleNumber && (
-          <div className="flex items-center gap-2 text-muted-foreground mt-2 pt-2 border-t">
-            <Car className="h-4 w-4" />
-            <span className="font-medium">Vehicle:</span>
-            <span>{partner.vehicleNumber}</span>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

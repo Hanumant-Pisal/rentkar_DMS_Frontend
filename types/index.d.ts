@@ -20,13 +20,48 @@ export interface User {
     createdAt: string | Date;
     updatedAt?: string | Date;
   }
+  // export interface Partner {
+  //   _id: string;
+  //   id: string;
+  //   name: string;
+  //   email: string;
+  //   phone?: string;
+  //   isAvailable: boolean;
+  //   role?: string;
+  //   status?: string;
+  //   location?: { 
+  //     type: "Point"; 
+  //     coordinates: [number, number];
+  //     address?: string;
+  //   };
+  //   createdAt?: Date | string;
+  //   updatedAt?: Date | string;
+  // }
+  
+  export interface PartnerResponse {
+    _id?: string;
+    id?: string;
+    name: string;
+    email: string;
+    phone?: string;
+    isAvailable: boolean;
+    role?: string;
+    status?: string;
+    location?: { 
+      type: "Point"; 
+      coordinates: [number, number];
+      address?: string;
+    };
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+  }
+  
   export interface Partner {
     _id: string;
     id: string;
     name: string;
     email: string;
     phone?: string;
-    vehicleNumber?: string;
     isAvailable: boolean;
     role?: string;
     status?: string;

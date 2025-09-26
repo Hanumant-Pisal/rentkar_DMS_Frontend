@@ -1,12 +1,12 @@
-import AdminLayout from "../../components/layout/AdminLayout";
-import PartnerList from "../../components/layout/partners/PartnerList";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { useState, useEffect, useCallback } from "react";
 import { Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/router";
-import API from "../../utils/api";
-import { Partner } from "../../types";
-import { useAuth } from "../../hooks/useAuth";
+import API from "@/utils/api";
+import { Partner } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
+
 export default function PartnersPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, logout } = useAuth();
@@ -14,18 +14,33 @@ export default function PartnersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const transformPartners = (data: any[]): Partner[] => {
+
+  interface PartnerResponse {
+    _id?: string;
+    id?: string;
+    name: string;
+    email: string;
+    isAvailable: boolean;
+    location?: {
+      type: "Point";
+      coordinates: [number, number];
+      address?: string;
+    };
+  }
+
+  const transformPartners = useCallback((data: PartnerResponse[]): Partner[] => {
     return data.map(partner => ({
-      id: partner._id || partner.id,
+      _id: partner._id ?? partner.id ?? "", 
+      id: partner._id ?? partner.id ?? "",  
       name: partner.name,
       email: partner.email,
-      vehicleNumber: partner.vehicleNumber,
       isAvailable: partner.isAvailable,
       location: partner.location
     }));
-  };
-  const handleDeletePartner = async (partnerId: string) => {
-    if (!window.confirm('Are you sure you want to delete this partner? This action cannot be undone.')) {
+  }, []);
+  
+  const handleDeletePartner = useCallback(async (partnerId: string) => {
+    if (!window.confirm('Are you sure you want to delete this partner')) {
       return;
     }
     try {
@@ -34,25 +49,33 @@ export default function PartnersPage() {
       setPartners(prev => prev.filter(p => p.id !== partnerId));
       toast.success('Partner deleted successfully');
     } catch (error) {
-      const axiosError = error as {
-        code?: string;
-        response?: {
-          status?: number;
-          data?: any;
+      interface AxiosErrorResponse {
+        status?: number;
+        data?: {
+          message?: string;
+          [key: string]: unknown;
         };
-        message?: string;
-      };
+      }
+
+      interface AxiosError extends Error {
+        code?: string;
+        response?: AxiosErrorResponse;
+        message: string;
+      }
+
+      const axiosError = error as AxiosError;
       console.error('Error deleting partner:', error);
       if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
         toast.error('Session expired. Please log in again.');
-        logout();
+        if (logout) logout();
       } else {
         toast.error(axiosError.response?.data?.message || 'Failed to delete partner');
       }
     } finally {
       setDeletingId(null);
     }
-  };
+  }, [logout]);
+
   const fetchPartners = useCallback(async () => {
     try {
       setLoading(true);
@@ -60,14 +83,21 @@ export default function PartnersPage() {
       const res = await API.get("/admin/partners");
       setPartners(transformPartners(res.data.partners || []));
     } catch (error: unknown) {
-      const axiosError = error as {
-        code?: string;
-        response?: {
-          status?: number;
-          data?: any;
+      interface AxiosErrorResponse {
+        status?: number;
+        data?: {
+          message?: string;
+          [key: string]: unknown;
         };
-        message?: string;
-      };
+      }
+
+      interface AxiosError extends Error {
+        code?: string;
+        response?: AxiosErrorResponse;
+        message: string;
+      }
+
+      const axiosError = error as AxiosError;
       console.error('Error fetching partners:', error);
       if (axiosError.code === 'ECONNABORTED') {
         setError('Request timed out. Please check your internet connection.');
@@ -75,7 +105,7 @@ export default function PartnersPage() {
         setError('Unable to connect to the server. Please try again later.');
       } else if (axiosError.response.status === 401 || axiosError.response.status === 403) {
         setError('Your session has expired. Please log in again.');
-        logout();
+        if (logout) logout();
       } else {
         setError('Failed to load partners. ' + (axiosError.response.data?.message || 'Please try again.'));
       }
@@ -83,6 +113,7 @@ export default function PartnersPage() {
       setLoading(false);
     }
   }, [logout]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -90,7 +121,18 @@ export default function PartnersPage() {
       return;
     }
     fetchPartners();
-  }, [authLoading, user, router, logout, fetchPartners]);
+  }, [authLoading, user, router, fetchPartners]);
+
+  if (authLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-400"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-6 p-6">
@@ -100,6 +142,7 @@ export default function PartnersPage() {
             <p className="text-gray-400">Manage your delivery partners and their details</p>
           </div>
         </div>
+
         {loading ? (
           <div className="flex justify-center items-center h-64 rounded-lg bg-gray-800/50">
             <div className="animate-pulse text-gray-400">Loading partners...</div>
@@ -139,6 +182,7 @@ export default function PartnersPage() {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-white">{partner.name}</div>
+                            
                           </div>
                         </div>
                       </td>
@@ -146,37 +190,46 @@ export default function PartnersPage() {
                         {partner.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${partner.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          partner.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
                           {partner.isAvailable ? 'Available' : 'Unavailable'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button 
-  onClick={(e) => {
-    e.stopPropagation();
-    handleDeletePartner(partner.id);
-  }}
-  disabled={deletingId === partner.id}
-  className={`flex items-center space-x-1 ${deletingId === partner.id ? 'text-gray-500' : 'text-red-400 hover:text-red-300'} transition-colors`}
->
-  {deletingId === partner.id ? (
-    <>
-      <Loader2 className="h-4 w-4 animate-spin" />
-      <span>Deleting...</span>
-    </>
-  ) : (
-    <>
-      <Trash2 className="h-4 w-4" />
-      <span>Delete</span>
-    </>
-  )}
-</button>
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePartner(partner.id);
+                          }}
+                          disabled={deletingId === partner.id}
+                          className={`flex items-center space-x-1 ${
+                            deletingId === partner.id ? 'text-gray-500' : 'text-red-400 hover:text-red-300'
+                          } transition-colors`}
+                        >
+                          {deletingId === partner.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4" />
+                              <span>Delete</span>
+                            </>
+                          )}
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {partners.length === 0 && !loading && (
+              <div className="text-center py-12">
+                <p className="text-gray-400">No partners found. Add your first partner to get started.</p>
+              </div>
+            )}
           </div>
         )}
       </div>

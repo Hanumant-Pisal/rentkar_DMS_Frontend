@@ -29,12 +29,6 @@ const PartnerList = ({ partners }: Props) => {
               <p className="text-sm text-gray-600">Email</p>
               <p className="text-sm">{partner.email}</p>
             </div>
-            {partner.vehicleNumber && (
-              <div>
-                <p className="text-sm text-gray-600">Vehicle Number</p>
-                <p className="text-sm font-mono">{partner.vehicleNumber}</p>
-              </div>
-            )}
             {partner.location && (
               <div>
                 <p className="text-sm text-gray-600">Location</p>

@@ -1,7 +1,4 @@
 import type { AppProps } from 'next/app';
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import Head from 'next/head';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import '../styles/globals.css';
@@ -17,18 +14,6 @@ const queryClient = new QueryClient({
   },
 });
 export default function App({ Component, pageProps }: AppProps) {
-  const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

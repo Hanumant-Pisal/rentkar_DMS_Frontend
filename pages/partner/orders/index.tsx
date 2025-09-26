@@ -1,13 +1,10 @@
-import { useRouter } from 'next/router';
-import { useState, ChangeEvent } from 'react';
+import { useState } from 'react';
 import { usePartnerOrders } from '@/hooks/usePartnerOrders';
-import { useAuth } from '@/hooks/useAuth';
 import { withAuth } from '@/components/auth/AuthGuard';
 import PartnerLayout from '@/components/layout/PartnerLayout';
 import OrderList from '@/components/orders/OrderList';
 import { Button } from '@/components/ui/button';
-import Input from '@/components/ui/Input';
-import { Search, Filter, Download, Package } from 'lucide-react';
+import { Package, Filter } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -25,8 +22,6 @@ const statusOptions = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 function PartnerOrdersPage() {
-  const router = useRouter();
-  const { user } = useAuth();
   const { orders: assignedOrders, isLoading } = usePartnerOrders();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

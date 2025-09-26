@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from "react";
+import { useState } from "react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import { useOrders, CreateOrderData, UpdateOrderData } from "../../hooks/useOrders";
 import { usePartners } from "../../hooks/usePartners";
@@ -6,15 +6,12 @@ import OrderForm from "../../components/orders/OrderForm";
 import OrderList from "../../components/orders/OrderList";
 import { withAuth } from "@/components/auth/AuthGuard";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Search, Filter } from "lucide-react";
+import { Plus, Package, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Order } from "@/types";
-import axios, { AxiosError } from 'axios';
-import { mutate } from 'swr';
 import API from "@/utils/api";
-import Input from "@/components/ui/Input";
 import {
   Select,
   SelectContent,
@@ -37,7 +34,7 @@ function OrdersPage() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const handleCreateOrder = async (orderData: CreateOrderData) => {
     try {
@@ -46,9 +43,10 @@ function OrdersPage() {
       toast.success("Order created successfully");
       await mutate("/orders");
       setShowForm(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create order:", error);
-      toast.error(error.response?.data?.error || "Failed to create order");
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error(errorMessage);
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -61,9 +59,10 @@ function OrdersPage() {
       toast.success("Order updated successfully");
       await mutate("/orders");
       setEditingOrder(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Failed to update order ${orderId}:`, error);
-      toast.error(error.response?.data?.error || "Failed to update order");
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update order';
+      toast.error(errorMessage);
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -83,9 +82,10 @@ function OrdersPage() {
         await deleteOrder(orderId);
         toast.success('Order deleted successfully');
         await mutate('/api/orders');
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Failed to delete order:', error);
-        toast.error(error.response?.data?.error || 'Failed to delete order');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete order';
+        toast.error(errorMessage);
       }
     }
   };
@@ -98,10 +98,13 @@ function OrdersPage() {
         mutate('/admin/partners')
       ]);
       toast.success('Order assigned successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Failed to assign order ${orderId}:`, error);
-      const errorMessage = error.response?.data?.error || 'Failed to assign order';
-      console.error('Error details:', error.response?.data);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to assign order';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: unknown } };
+        console.error('Error details:', apiError.response?.data);
+      }
       toast.error(errorMessage);
       throw error;
     } finally {

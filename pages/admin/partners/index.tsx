@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import Input from "@/components/ui/Input";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function PartnersPage() {
   const router = useRouter();
@@ -17,8 +17,8 @@ export default function PartnersPage() {
   const [filteredPartners, setFilteredPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('name');
+  const [statusFilter] = useState<string>('all');
+  const [sortBy] = useState<string>('name');
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!user) {
@@ -30,14 +30,19 @@ export default function PartnersPage() {
         setLoading(true);
         const res = await API.get("/partners");
         setPartners(res.data.partners || []);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching partners:', error);
-        setError('Failed to load partners. Please try again.');
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          logout();
-        } else {
-          toast.error(error.response?.data?.message || 'Failed to load partners');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load partners';
+        setError(errorMessage);
+        if (error && typeof error === 'object' && 'response' in error) {
+          const apiError = error as { response?: { status?: number } };
+          const status = apiError.response?.status;
+          if (status === 401 || status === 403) {
+            if (logout) logout();
+            return;
+          }
         }
+        toast.error('Failed to load partners');
       } finally {
         setLoading(false);
       }
@@ -51,8 +56,7 @@ export default function PartnersPage() {
       result = result.filter(partner => 
         partner.name.toLowerCase().includes(term) ||
         partner.email.toLowerCase().includes(term) ||
-        (partner.phone && partner.phone.includes(term)) ||
-        (partner.vehicleNumber && partner.vehicleNumber.toLowerCase().includes(term))
+        (partner.phone && partner.phone.includes(term))
       );
     }
     if (statusFilter !== 'all') {
@@ -86,11 +90,15 @@ export default function PartnersPage() {
         return;
       }
       router.push(`/admin/partners/${partner.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error selecting partner:', error);
       toast.error('Failed to load partner details. Please try again.');
-      if (error?.response?.status === 401) {
-        logout();
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { status?: number } };
+        const status = apiError.response?.status;
+        if (status === 401) {
+          if (logout) logout();
+        }
       }
     }
   }, [router, logout]);

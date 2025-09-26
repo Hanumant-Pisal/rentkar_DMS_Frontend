@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 type Role = 'admin' | 'partner' | 'any';
+
 interface AuthGuardProps {
   children: React.ReactNode;
   requiredRole?: Role;
 }
+
 export const AuthGuard = ({ children, requiredRole = 'any' }: AuthGuardProps) => {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -28,20 +30,17 @@ export const AuthGuard = ({ children, requiredRole = 'any' }: AuthGuardProps) =>
   if (isLoading || !isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size="lg" />
+        <LoadingSpinner />
       </div>
     );
   }
   return <>{children}</>;
 };
-type WithAuthProps = {
-  [key: string]: unknown;
-};
 
-export const withAuth = <P extends object>(
+export function withAuth<P extends object>(
   Component: React.ComponentType<P>,
   requiredRole: Role = 'any'
-) => {
+) {
   return function ProtectedRoute(props: P) {
     return (
       <AuthGuard requiredRole={requiredRole}>
