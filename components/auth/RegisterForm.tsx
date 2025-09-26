@@ -13,8 +13,17 @@ const RegisterForm = () => {
     try {
       await API.post("/auth/register", { name, email, password, role });
       router.push("/auth/login");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Registration failed");
+    } catch (err: unknown) {
+      const errorMessage = err && 
+                         typeof err === 'object' && 
+                         'response' in err &&
+                         typeof err.response === 'object' &&
+                         err.response !== null &&
+                         'data' in err.response &&
+                         typeof (err.response.data as { error?: string }).error === 'string'
+        ? (err.response.data as { error: string }).error
+        : "Registration failed";
+      setError(errorMessage);
     }
   };
   return (

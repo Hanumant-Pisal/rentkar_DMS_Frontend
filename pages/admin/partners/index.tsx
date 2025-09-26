@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import Input from "@/components/ui/Input";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+
 export default function PartnersPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -63,9 +64,10 @@ export default function PartnersPage() {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'recent':
-          return new Date(b.joinedAt || 0).getTime() - new Date(a.joinedAt || 0).getTime();
-        case 'rating':
-          return (b.rating || 0) - (a.rating || 0);
+          // Use createdAt if available, otherwise use current date
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
         default:
           return 0;
       }
@@ -99,7 +101,7 @@ export default function PartnersPage() {
           <div className="bg-red-50 border-l-4 border-red-400 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" xmlns="http:
+                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -127,7 +129,8 @@ export default function PartnersPage() {
             Add New Partner
           </Button>
         </div>
-        <Card className="p-6 mb-6">
+        
+        <Card className="p-6">
           <div className="mb-6">
             <div className="relative max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -140,22 +143,23 @@ export default function PartnersPage() {
                 className="pl-10"
                 placeholder="Search partners by name, email, or vehicle..."
                 value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <p>Loading partners...</p>
-            </div>
-          ) : (
-            <PartnerList 
-              partners={filteredPartners} 
-              onSelect={handlePartnerSelect}
-              onAddNew={handleAddNewPartner}
-              loading={loading}
-            />
-          )}
+
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="p-6 text-center">
+                <p>Loading partners...</p>
+              </div>
+            ) : (
+              <PartnerList 
+                partners={filteredPartners} 
+                onSelect={handlePartnerSelect}
+              />
+            )}
+          </CardContent>
         </Card>
       </div>
     </AdminLayout>

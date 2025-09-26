@@ -34,11 +34,18 @@ export const AuthGuard = ({ children, requiredRole = 'any' }: AuthGuardProps) =>
   }
   return <>{children}</>;
 };
-export const withAuth = (Component: React.ComponentType, requiredRole: Role = 'any') => {
-  return function ProtectedRoute(props: any) {
+type WithAuthProps = {
+  [key: string]: unknown;
+};
+
+export const withAuth = <P extends object>(
+  Component: React.ComponentType<P>,
+  requiredRole: Role = 'any'
+) => {
+  return function ProtectedRoute(props: P) {
     return (
       <AuthGuard requiredRole={requiredRole}>
-        <Component {...props} />
+        <Component {...props as P} />
       </AuthGuard>
     );
   };

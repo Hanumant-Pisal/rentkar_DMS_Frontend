@@ -7,26 +7,22 @@ import { cn } from "@/lib/utils";
 import { 
   Menu, 
   X, 
-  Bell, 
-  Search, 
   ChevronDown,
   User as UserIcon, 
-  Package, 
   LogOut, 
   Settings, 
   LayoutDashboard, 
-  Truck 
+  Truck,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getUser } from "@/utils/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
-
   DropdownMenuItem,
   DropdownMenuLabel,
-  
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 interface NavItem {
@@ -53,17 +49,11 @@ export default function Navbar({ className, onMenuClick, user: propUser }: Navba
   useEffect(() => {
     if (!user) {
       const storedUser = getUser();
-      console.log('Stored user from localStorage:', storedUser);
       if (storedUser) {
-        console.log('Setting user state:', storedUser);
         setUser(storedUser);
-      } else {
-        console.log('No user found in localStorage');
       }
-    } else {
-      console.log('User from props:', user);
     }
-  }, []);
+  }, [user]);
   const adminNavigation: NavItem[] = [
     { 
       name: 'Dashboard', 
@@ -83,18 +73,7 @@ export default function Navbar({ className, onMenuClick, user: propUser }: Navba
       icon: UserIcon,
       current: pathname?.startsWith('/admin/partners') ?? false
     },
-    { 
-      name: 'Vehicles', 
-      href: '/admin/vehicles', 
-      icon: Truck,
-      current: pathname?.startsWith('/admin/vehicles') ?? false
-    },
-    { 
-      name: 'Settings', 
-      href: '/admin/settings', 
-      icon: Settings,
-      current: pathname?.startsWith('/admin/settings') ?? false
-    },
+    
   ];
   const partnerNavigation: NavItem[] = [
     { 

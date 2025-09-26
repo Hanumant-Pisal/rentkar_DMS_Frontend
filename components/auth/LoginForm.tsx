@@ -36,8 +36,10 @@ const LoginForm = () => {
       sessionStorage.removeItem('preventLoginRedirect');
       const redirectPath = user.role === "admin" ? "/admin/dashboard" : "/partner/dashboard";
       window.location.href = redirectPath;
-    } catch (err: any) {
-      const errorMessage = err.message || "Login failed. Please check your credentials and try again.";
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : "Login failed. Please check your credentials and try again.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);

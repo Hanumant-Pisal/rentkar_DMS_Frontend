@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Order, Partner, User } from "@/types";
+import type { Order, Partner } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO } from 'date-fns';
 import dynamic from 'next/dynamic';
+
 const DeliveryMap = dynamic(
   () => import('@/components/map/DeliveryMap'),
-  { ssr: false }
+  { ssr: false, loading: () => <div className="h-64 bg-gray-800 rounded-md flex items-center justify-center">Loading map...</div> }
 );
+
 import { Button } from "@/components/ui/button";
 import { Trash2, Pencil, UserPlus, Check, ChevronDown, Package } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,7 +18,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useUpdateOrderStatus } from "@/hooks/useUpdateOrderStatus";

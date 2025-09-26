@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { Order } from "../../types";
-import { CreateOrderData, UpdateOrderData } from "../../hooks/useOrders";
+import { useState } from "react";
+import type { Order } from "../../types";
+import type { CreateOrderData, UpdateOrderData } from "../../hooks/useOrders";
 import dynamic from "next/dynamic";
 import type { Location } from "../../types/map";
+
 const DeliveryMap = dynamic(
   () => import("../map/DeliveryMap"),
   { 
@@ -182,7 +183,7 @@ const OrderForm = ({
   const removeItem = (index: number): void => {
     setFormData((prev: OrderFormData) => ({
       ...prev,
-      items: prev.items.filter((_: any, i: number) => i !== index),
+      items: prev.items.filter((_, i: number) => i !== index),
     }));
   };
   const updateItem = (
@@ -342,7 +343,7 @@ const OrderForm = ({
                   key={`${activeLocationType}-${mapVisible}`}
                   onLocationSelect={handleLocationSelect}
                   initialLocation={activeLocationType === 'from' ? fromLocation : toLocation}
-                  showRoute={fromLocation && toLocation}
+                  showRoute={!!(fromLocation && toLocation)}
                   fromLocation={fromLocation}
                   toLocation={toLocation}
                 />

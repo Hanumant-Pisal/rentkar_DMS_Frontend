@@ -9,7 +9,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-// @ts-ignore - _getIconUrl is a known property but not in the type definitions
+// @ts-expect-error - _getIconUrl is a known property but not in the type definitions
 delete L.Icon.Default.prototype._getIconUrl;
 
 
@@ -60,30 +60,45 @@ export interface Props {
   fromLocation?: Location | null;
   toLocation?: Location | null;
 }
-const LocationMarker = ({ 
-  onLocationSelect, 
-  initialLocation 
-}: { 
+interface LocationMarkerProps {
   onLocationSelect?: (lat: number, lng: number, address?: string) => void;
   initialLocation?: Location | null;
+}
+
+const LocationMarker: React.FC<LocationMarkerProps> = ({ 
+  onLocationSelect, 
+  initialLocation 
 }) => {
+  const defaultCenter = useMemo(() => ({
+    lat: 19.0760, // Default to Mumbai coordinates
+    lng: 72.8777
+  }), []);
+
   const [position, setPosition] = useState<[number, number] | null>(
     initialLocation ? [initialLocation.lat, initialLocation.lng] : null
   );
+  
   const map = useMap();
+  
   useEffect(() => {
     if (initialLocation) {
       const newPos: [number, number] = [initialLocation.lat, initialLocation.lng];
       setPosition(newPos);
       map.setView(newPos, 15);
+    } else {
+      // Use default center if no initial location is provided
+      map.setView([defaultCenter.lat, defaultCenter.lng], 15);
     }
-  }, [initialLocation, map]);
+  }, [initialLocation, map, defaultCenter]);
+
   const mapEvents = useMemo(() => ({
     click(e: L.LeafletMouseEvent) {
       if (!onLocationSelect) return;
+      
       const { lat, lng } = e.latlng;
       const newPos: [number, number] = [lat, lng];
       setPosition(newPos);
+      
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
         .then((response: Response) => response.json())
         .then((data: { display_name?: string }) => {
@@ -95,7 +110,9 @@ const LocationMarker = ({
         });
     },
   }), [onLocationSelect]);
+
   useMapEvents(mapEvents);
+  
   if (!position) return null;
   return (
     <Marker position={position} icon={currentLocationIcon}>

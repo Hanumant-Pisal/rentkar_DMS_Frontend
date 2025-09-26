@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, AxiosRequestHeade
 type ErrorResponse = {
   message?: string;
   error?: string;
-  [key: string]: any; 
+  [key: string]: string | number | boolean | null | undefined | string[] | number[] | Record<string, unknown>; 
 };
 type AxiosErrorWithResponse = AxiosError & {
   response?: AxiosResponse<ErrorResponse>;
