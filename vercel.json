@@ -8,7 +8,23 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "^/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "^/_next/static/(.*)",
+      "dest": "/_next/static/$1"
+    },
+    {
+      "src": "^/favicon.ico",
+      "dest": "/favicon.ico"
+    },
+    {
+      "src": "^/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "^/(.*)",
       "dest": "/"
     }
   ],

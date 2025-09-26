@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
   
   // Configure images
-  // Image optimization configuration
   images: {
     domains: [
       'avatars.githubusercontent.com',
@@ -41,39 +40,10 @@ const nextConfig: NextConfig = {
     ];
   },
   
-  // SPA fallback for client-side routing
-  async rewrites() {
-    return [
-      // Don't rewrite API routes, _next/static, or other special paths
-      {
-        source: '/:path*',
-        destination: '/auth/login',
-        has: [
-          {
-            type: 'host',
-            value: '(?<host>.*)',
-          },
-        ],
-        missing: [
-          { type: 'header', key: 'accept', value: 'text/html' },
-          { type: 'header', key: 'accept', value: 'application/json' },
-          { type: 'header', key: 'accept', value: 'application/javascript' },
-          { type: 'header', key: 'accept', value: 'text/css' },
-          { type: 'header', key: 'x-requested-with', value: 'XMLHttpRequest' },
-        ],
-      },
-      // Handle API routes and static files
-      {
-        source: '/(_next|static|api|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\.(?:js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))',
-        destination: '/$1',
-      },
-    ];
-  },
-  
   // Enable SWC minification
   swcMinify: true,
   
-  // Enable static exports for SPA behavior
+  // Output configuration
   output: 'standalone',
   
   // Disable ETag generation
