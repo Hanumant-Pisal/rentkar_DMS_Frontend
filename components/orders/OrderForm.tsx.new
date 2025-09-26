@@ -1,0 +1,454 @@
+import { useState, useEffect } from "react";
+import { Order } from "../../types";
+import { CreateOrderData, UpdateOrderData } from "../../hooks/useOrders";
+import dynamic from "next/dynamic";
+
+// Dynamically import DeliveryMap with no SSR
+const DeliveryMap = dynamic(
+  () => import("../map/DeliveryMap"),
+  { ssr: false }
+);
+
+interface Location {
+  lat: number;
+  lng: number;
+  address?: string;
+}
+
+interface OrderFormData {
+  customerName: string;
+  customerPhone: string;
+  deliveryAddress: string;
+  pickupAddress: string;
+  items: Array<{ name: string; qty: number }>;
+  deliveryLocation?: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  pickupLocation?: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+}
+
+interface Props {
+  onSubmit: (orderData: CreateOrderData | UpdateOrderData) => Promise<void>;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  initialData?: Partial<Order>;
+  isSubmitting?: boolean;
+  isUpdate?: boolean;
+}
+
+const OrderForm = ({
+  onSubmit,
+  onSuccess,
+  onCancel,
+  initialData,
+  isSubmitting = false,
+  isUpdate = false,
+}: Props) => {
+  // Form data state
+  const [formData, setFormData] = useState<OrderFormData>({
+    customerName: initialData?.customerName || "",
+    customerPhone: initialData?.customerPhone || "",
+    deliveryAddress: initialData?.deliveryAddress || "",
+    pickupAddress: initialData?.pickupAddress || "",
+    items: initialData?.items?.length ? [...initialData.items] : [{ name: "", qty: 1 }],
+    ...(initialData?.deliveryLocation && {
+      deliveryLocation: {
+        type: "Point" as const,
+        coordinates: [
+          initialData.deliveryLocation.coordinates[0],
+          initialData.deliveryLocation.coordinates[1],
+        ],
+      },
+    }),
+    ...(initialData?.pickupLocation && {
+      pickupLocation: {
+        type: "Point" as const,
+        coordinates: [
+          initialData.pickupLocation.coordinates[0],
+          initialData.pickupLocation.coordinates[1],
+        ],
+      },
+    }),
+  });
+
+  // UI state
+  const [error, setError] = useState<string | null>(null);
+  const [mapVisible, setMapVisible] = useState(false);
+  const [activeLocationType, setActiveLocationType] = useState<'from' | 'to'>('from');
+  
+  // Location states
+  const [fromLocation, setFromLocation] = useState<Location | null>(
+    initialData?.pickupLocation
+      ? {
+          lat: initialData.pickupLocation.coordinates[1],
+          lng: initialData.pickupLocation.coordinates[0],
+          address: initialData.pickupAddress
+        }
+      : null
+  );
+  
+  const [toLocation, setToLocation] = useState<Location | null>(
+    initialData?.deliveryLocation
+      ? {
+          lat: initialData.deliveryLocation.coordinates[1],
+          lng: initialData.deliveryLocation.coordinates[0],
+          address: initialData.deliveryAddress
+        }
+      : null
+  );
+
+  const validateForm = (): boolean => {
+    if (!formData.customerName.trim()) {
+      setError("Customer name is required");
+      return false;
+    }
+    if (!formData.customerPhone.trim()) {
+      setError("Customer phone is required");
+      return false;
+    }
+    if (!formData.pickupAddress.trim()) {
+      setError("Pickup address is required");
+      return false;
+    }
+    if (!formData.deliveryAddress.trim()) {
+      setError("Delivery address is required");
+      return false;
+    }
+    if (formData.items.some(item => !item.name.trim() || item.qty <= 0)) {
+      setError("All items must have a name and quantity greater than 0");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const orderData: CreateOrderData | UpdateOrderData = {
+        customerName: formData.customerName.trim(),
+        customerPhone: formData.customerPhone.trim(),
+        pickupAddress: formData.pickupAddress.trim(),
+        deliveryAddress: formData.deliveryAddress.trim(),
+        items: formData.items.map(item => ({
+          name: item.name.trim(),
+          qty: item.qty,
+        })),
+      };
+
+      if (fromLocation) {
+        orderData.pickupLocation = {
+          type: "Point",
+          coordinates: [fromLocation.lng, fromLocation.lat],
+        };
+      }
+
+      if (toLocation) {
+        orderData.deliveryLocation = {
+          type: "Point",
+          coordinates: [toLocation.lng, toLocation.lat],
+        };
+      }
+
+      await onSubmit(orderData);
+      onSuccess?.();
+    } catch (err: any) {
+      setError(err.message || "An error occurred while saving the order");
+    }
+  };
+
+  const addItem = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { name: "", qty: 1 }],
+    });
+  };
+
+  const removeItem = (index: number) => {
+    const newItems = formData.items.filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      items: newItems.length ? newItems : [{ name: "", qty: 1 }],
+    });
+  };
+
+  const updateItem = (index: number, field: keyof { name: string; qty: number }, value: string | number) => {
+    const updatedItems = formData.items.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item
+    );
+    setFormData({ ...formData, items: updatedItems });
+  };
+
+  const handleLocationSelect = (lat: number, lng: number, address?: string) => {
+    const newLocation = { lat, lng, address };
+    
+    if (activeLocationType === 'from') {
+      setFromLocation(newLocation);
+      setFormData(prev => ({
+        ...prev,
+        pickupLocation: {
+          type: 'Point' as const,
+          coordinates: [lng, lat]
+        },
+        pickupAddress: address || prev.pickupAddress
+      }));
+    } else {
+      setToLocation(newLocation);
+      setFormData(prev => ({
+        ...prev,
+        deliveryLocation: {
+          type: 'Point' as const,
+          coordinates: [lng, lat]
+        },
+        deliveryAddress: address || prev.deliveryAddress
+      }));
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white/5 backdrop-blur-sm p-6 rounded-lg border border-white/10">
+      <h2 className="text-2xl font-bold text-white">
+        {isUpdate ? 'Update Order' : 'Create New Order'}
+      </h2>
+      
+      {error && (
+        <div className="p-3 bg-red-500/20 border border-red-500/30 text-red-100 rounded text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Customer Name</label>
+          <input
+            type="text"
+            value={formData.customerName}
+            onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+            className="w-full p-2 bg-white/5 border border-white/10 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Customer Phone</label>
+          <input
+            type="tel"
+            value={formData.customerPhone}
+            onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+            className="w-full p-2 bg-white/5 border border-white/10 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {/* From Location */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Pickup Location</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={formData.pickupAddress}
+              onChange={(e) => setFormData({...formData, pickupAddress: e.target.value})}
+              placeholder="Enter pickup address"
+              className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              required
+              disabled={isSubmitting}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setActiveLocationType('from');
+                setMapVisible(true);
+              }}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+              disabled={isSubmitting}
+            >
+              Map
+            </button>
+          </div>
+          {fromLocation && (
+            <div className="text-xs text-gray-400">
+              Lat: {fromLocation.lat.toFixed(6)}, Lng: {fromLocation.lng.toFixed(6)}
+            </div>
+          )}
+        </div>
+
+        {/* To Location */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Delivery Location</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={formData.deliveryAddress}
+              onChange={(e) => setFormData({...formData, deliveryAddress: e.target.value})}
+              placeholder="Enter delivery address"
+              className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              required
+              disabled={isSubmitting}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setActiveLocationType('to');
+                setMapVisible(true);
+              }}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+              disabled={isSubmitting}
+            >
+              Map
+            </button>
+          </div>
+          {toLocation && (
+            <div className="text-xs text-gray-400">
+              Lat: {toLocation.lat.toFixed(6)}, Lng: {toLocation.lng.toFixed(6)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <label className="block text-sm font-medium text-gray-300">Items</label>
+          <button
+            type="button"
+            onClick={addItem}
+            className="text-sm text-blue-400 hover:text-blue-300"
+            disabled={isSubmitting}
+          >
+            + Add Item
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {formData.items.map((item, index) => (
+            <div key={index} className="flex gap-2 items-start">
+              <div className="flex-1 grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={item.name}
+                  onChange={(e) => updateItem(index, 'name', e.target.value)}
+                  placeholder="Item name"
+                  className="w-full p-2 bg-white/5 border border-white/10 text-white rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  disabled={isSubmitting}
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.qty}
+                    onChange={(e) => updateItem(index, 'qty', parseInt(e.target.value) || 1)}
+                    className="w-full p-2 bg-white/5 border border-white/10 text-white rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    disabled={isSubmitting}
+                  />
+                  {formData.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="p-2 text-red-400 hover:text-red-300"
+                      disabled={isSubmitting}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 rounded transition-colors"
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors flex items-center gap-2"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {isUpdate ? 'Updating...' : 'Creating...'}
+            </>
+          ) : isUpdate ? (
+            'Update Order'
+          ) : (
+            'Create Order'
+          )}
+        </button>
+      </div>
+
+      {/* Map Modal */}
+      {mapVisible && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-lg w-full max-w-4xl h-[80vh] flex flex-col">
+            <div className="p-4 border-b border-white/10 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-white">
+                Select {activeLocationType === 'from' ? 'Pickup' : 'Delivery'} Location
+              </h3>
+              <button
+                onClick={() => setMapVisible(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 relative">
+              <DeliveryMap
+                key={`${activeLocationType}-${mapVisible}`}
+                onLocationSelect={handleLocationSelect}
+                initialLocation={activeLocationType === 'from' ? fromLocation : toLocation}
+                showRoute={!!(fromLocation && toLocation)}
+                fromLocation={fromLocation}
+                toLocation={toLocation}
+              />
+            </div>
+            <div className="p-4 border-t border-white/10 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setMapVisible(false)}
+                className="px-4 py-2 text-sm text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapVisible(false)}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+              >
+                Confirm Location
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </form>
+  );
+};
+
+export default OrderForm;

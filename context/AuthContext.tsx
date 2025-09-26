@@ -1,0 +1,1 @@
+import { AuthProvider } from "@/hooks/useAuth";export const AppProvider = ({ children }: any) => {  return <AuthProvider>{children}</AuthProvider>;};
