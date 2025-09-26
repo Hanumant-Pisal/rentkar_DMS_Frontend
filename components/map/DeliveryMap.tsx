@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Order } from "../../types";
-// Fix for leaflet marker icons in Next.js
+
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -12,7 +12,7 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 // @ts-ignore - _getIconUrl is a known property but not in the type definitions
 delete L.Icon.Default.prototype._getIconUrl;
 
-// Configure default icon
+
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x.src,
   iconUrl: markerIcon.src,
@@ -23,7 +23,7 @@ L.Icon.Default.mergeOptions({
   shadowSize: [41, 41]
 });
 
-// Custom icons
+
 const createCustomIcon = (color: string) => {
   return new L.DivIcon({
     html: `
@@ -44,9 +44,9 @@ const createCustomIcon = (color: string) => {
   });
 };
 
-const pickupIcon = createCustomIcon('#EF4444'); // Red
-const deliveryIcon = createCustomIcon('#10B981'); // Green
-const currentLocationIcon = createCustomIcon('#3B82F6'); // Blue
+const pickupIcon = createCustomIcon('#EF4444'); 
+const deliveryIcon = createCustomIcon('#10B981'); 
+const currentLocationIcon = createCustomIcon('#3B82F6'); 
 interface Location {
   lat: number;
   lng: number;
