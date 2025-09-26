@@ -13,19 +13,41 @@ type AxiosErrorWithResponse = AxiosError & {
   };
 };
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+console.log('API Base URL:', API_BASE_URL); // Debug log
+
 const API = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, 
+  timeout: 10000,
+  withCredentials: true, // Include cookies in cross-origin requests
 });
 // Add response interceptor for better error handling
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('API Response:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data,
+      headers: response.headers
+    });
+    return response;
+  },
   (error: AxiosErrorWithResponse) => {
+    console.error('API Error:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method,
+      headers: error.config?.headers,
+      responseData: error.response?.data
+    });
+
     if (error.response?.status === 403) {
-      // Token might be invalid or expired
+      console.log('403 Forbidden - Token might be invalid or expired');
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         window.location.href = '/auth/login';
@@ -37,8 +59,16 @@ API.interceptors.response.use(
 
 API.interceptors.request.use(
   (config) => {
+    console.log('API Request:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data
+    });
+    
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem("token");
+      console.log('Current token:', token ? 'Token exists' : 'No token found');
       if (token) {
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
