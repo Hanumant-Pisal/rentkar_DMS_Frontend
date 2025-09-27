@@ -1,146 +1,86 @@
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, Plus, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/router";
 import API from "@/utils/api";
 import { Partner } from "@/types";
-import { useAuth } from "@/hooks/useAuth";
+import { withAuth } from "@/components/auth/AuthGuard";
+import { Button } from "@/components/ui/button";
+import { motion } from 'framer-motion';
 
-export default function PartnersPage() {
+export default withAuth(PartnersPage, 'admin');
+
+function PartnersPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, logout } = useAuth();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  interface PartnerResponse {
-    _id?: string;
-    id?: string;
-    name: string;
-    email: string;
-    isAvailable: boolean;
-    location?: {
-      type: "Point";
-      coordinates: [number, number];
-      address?: string;
-    };
-  }
-
-  const transformPartners = useCallback((data: PartnerResponse[]): Partner[] => {
-    return data.map(partner => ({
-      _id: partner._id ?? partner.id ?? "", 
-      id: partner._id ?? partner.id ?? "",  
-      name: partner.name,
-      email: partner.email,
-      isAvailable: partner.isAvailable,
-      location: partner.location
-    }));
-  }, []);
-  
-  const handleDeletePartner = useCallback(async (partnerId: string) => {
-    if (!window.confirm('Are you sure you want to delete this partner')) {
+  const handleDeletePartner = async (partnerId: string) => {
+    if (!window.confirm('Are you sure you want to delete this partner?')) {
       return;
     }
+    
     try {
       setDeletingId(partnerId);
       await API.delete(`/admin/partners/${partnerId}`);
       setPartners(prev => prev.filter(p => p.id !== partnerId));
       toast.success('Partner deleted successfully');
-    } catch (error) {
-      interface AxiosErrorResponse {
-        status?: number;
-        data?: {
-          message?: string;
-          [key: string]: unknown;
-        };
-      }
-
-      interface AxiosError extends Error {
-        code?: string;
-        response?: AxiosErrorResponse;
-        message: string;
-      }
-
-      const axiosError = error as AxiosError;
+    } catch (error: any) {
       console.error('Error deleting partner:', error);
-      if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
-        toast.error('Session expired. Please log in again.');
-        if (logout) logout();
-      } else {
-        toast.error(axiosError.response?.data?.message || 'Failed to delete partner');
+      toast.error(error.response?.data?.message || 'Failed to delete partner');
+      
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        router.push('/auth/login');
       }
     } finally {
       setDeletingId(null);
     }
-  }, [logout]);
+  };
 
   const fetchPartners = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const res = await API.get("/admin/partners");
-      setPartners(transformPartners(res.data.partners || []));
-    } catch (error: unknown) {
-      interface AxiosErrorResponse {
-        status?: number;
-        data?: {
-          message?: string;
-          [key: string]: unknown;
-        };
-      }
-
-      interface AxiosError extends Error {
-        code?: string;
-        response?: AxiosErrorResponse;
-        message: string;
-      }
-
-      const axiosError = error as AxiosError;
+      setPartners(res.data.partners || []);
+    } catch (error: any) {
       console.error('Error fetching partners:', error);
-      if (axiosError.code === 'ECONNABORTED') {
+      if (error.code === 'ECONNABORTED') {
         setError('Request timed out. Please check your internet connection.');
-      } else if (!axiosError.response) {
-        setError('Unable to connect to the server. Please try again later.');
-      } else if (axiosError.response.status === 401 || axiosError.response.status === 403) {
+      } else if (!error.response) {
+        setError('Network error. Please check your connection.');
+      } else if (error.response.status === 401 || error.response.status === 403) {
         setError('Your session has expired. Please log in again.');
-        if (logout) logout();
+        router.push('/auth/login');
       } else {
-        setError('Failed to load partners. ' + (axiosError.response.data?.message || 'Please try again.'));
+        setError('Failed to load partners. ' + (error.response.data?.message || 'Please try again.'));
       }
     } finally {
       setLoading(false);
     }
-  }, [logout]);
+  }, [router]);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      router.push('/auth/login');
-      return;
-    }
     fetchPartners();
-  }, [authLoading, user, router, fetchPartners]);
-
-  if (authLoading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-400"></div>
-        </div>
-      </AdminLayout>
-    );
-  }
+  }, [fetchPartners]);
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-gray-900 text-white p-6">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Delivery Partners</h1>
+            <h1 className="text-2xl font-bold">Delivery Partners</h1>
             <p className="text-gray-400">Manage your delivery partners and their details</p>
           </div>
+          <Button
+            onClick={() => router.push('/admin/partners/new')}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Partner
+          </Button>
         </div>
 
         {loading ? (
