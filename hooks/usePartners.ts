@@ -27,5 +27,6 @@ export function usePartners() {
     isError: !!error,
     error,
     refetch: fetchPartners,
+    mutate: fetchPartners, // Alias for refetch to match existing code
   };
 }
