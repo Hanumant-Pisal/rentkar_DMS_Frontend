@@ -21,12 +21,14 @@ function PartnersPage() {
 
     try {
       setDeletingId(partnerId);
+      // Update the endpoint to include /api/v1
       await API.delete(`/admin/partners/${partnerId}`);
       toast.success('Partner deleted successfully');
       await mutate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting partner:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete partner';
+      const errorMessage = error?.response?.data?.message || 
+                         (error instanceof Error ? error.message : 'Failed to delete partner');
       toast.error(errorMessage);
     } finally {
       setDeletingId(null);
