@@ -17,6 +17,32 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60, // 1 minute
   },
 
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ];
+  },
+  
+  // Enable SWC minification
+  swcMinify: true,
+  
   // Output configuration
   output: 'standalone',
   
@@ -25,29 +51,6 @@ const nextConfig: NextConfig = {
   
   // Configure page extensions
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  
-  // Configure base path if needed
-  // basePath: '',
-  
-  // Configure redirects
-  async redirects() {
-    return [
-      // Add any redirects here if needed
-    ];
-  },
-  
-  // Configure rewrites
-  async rewrites() {
-    return [
-      // Add any rewrites here if needed
-    ];
-  },
-  
-  // Configure webpack
-  webpack: (config, { isServer }) => {
-    // Add any webpack configurations here if needed
-    return config;
-  },
 };
 
 export default nextConfig;
