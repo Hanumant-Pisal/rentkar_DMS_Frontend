@@ -8,17 +8,12 @@ export function usePartners() {
   const fetchPartners = async () => {
     try {
       setIsLoading(true);
-      // Update the endpoint to include /api/v1
       const response = await API.get('/admin/partners');
-      setPartners(response.data.partners || response.data || []);
+      setPartners(response.data.partners || []);
       setError(null);
     } catch (err) {
       setError(err as Error);
       console.error('Failed to fetch partners:', err);
-      // Show error toast
-      // if (err.response?.data?.message) {
-      //   console.error('Server error:', err.response.data.message);
-      // }
     } finally {
       setIsLoading(false);
     }

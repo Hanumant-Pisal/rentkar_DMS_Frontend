@@ -25,17 +25,10 @@ type AxiosErrorWithResponse = AxiosError & {
 
 // Ensure API URL is properly formatted
 const getApiBaseUrl = (): string => {
-  // Default to local development server if not set
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  // Default to empty string if not set
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   // Remove trailing slash if present
-  const cleanUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  
-  // Log the API base URL for debugging (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('API Base URL:', cleanUrl);
-  }
-  
-  return cleanUrl;
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
