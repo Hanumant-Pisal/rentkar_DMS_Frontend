@@ -39,18 +39,13 @@ function PartnersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Delivery Partners</h1>
-            <p className="text-gray-400">Manage your delivery partners and their details</p>
+            <p className="text-gray-400">Manage delivery partners and their details</p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Partner
-          </Button>
+         
         </div>
 
         <Card className="border-gray-800 bg-gray-900">
-          <CardHeader>
-            <CardTitle className="text-white">Partners List</CardTitle>
-          </CardHeader>
+          
           <CardContent>
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
@@ -58,10 +53,10 @@ function PartnersPage() {
               </div>
             ) : error ? (
               <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
-                <p className="text-red-400">Error loading partners. Please try again.</p>
+                <p className="text-red-400">Error loading partners, Please try again.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto pt-6">
                 <table className="min-w-full divide-y divide-gray-700">
                   <thead className="bg-gray-800">
                     <tr>
@@ -126,7 +121,7 @@ function PartnersPage() {
                 </table>
                 {!isLoading && partners?.length === 0 && (
                   <div className="text-center py-12">
-                    <p className="text-gray-400">No partners found. Add your first partner to get started.</p>
+                    <p className="text-gray-400">No partners found.</p>
                   </div>
                 )}
               </div>
