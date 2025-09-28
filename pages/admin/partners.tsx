@@ -77,7 +77,7 @@ function PartnersPage() {
                   <tbody className="bg-gray-800/50 divide-y divide-gray-700">
                     {partners?.map((partner: Partner) => (
                       <motion.tr 
-                        key={partner.id}
+                        key={partner._id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="hover:bg-gray-700/50 transition-colors"
@@ -103,11 +103,11 @@ function PartnersPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeletePartner(partner.id)}
-                            disabled={deletingId === partner.id}
+                            onClick={() => handleDeletePartner(partner._id)}
+                            disabled={deletingId === partner._id}
                             className="text-red-500 hover:text-red-400 hover:bg-red-900/20"
                           >
-                            {deletingId === partner.id ? (
+                            {deletingId === partner._id ? (
                               <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             ) : (
                               <Trash2 className="h-4 w-4 mr-2" />
